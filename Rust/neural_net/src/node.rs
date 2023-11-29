@@ -7,11 +7,13 @@ pub struct Node {
 
 impl Node {
     pub fn default() -> Result<Self> {
-        
-
         Ok(Self {
             value: Some(i32),
             activation_fn: fn(i32, i32) -> i32,
         })
     }
+
+    pub fn add(&self, Node<T>) -> Result<Net, std::io::Erro> {
+
+    } 
 }
