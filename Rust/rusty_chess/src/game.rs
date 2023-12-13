@@ -1,5 +1,5 @@
 use raylib::prelude::*;
-use crate::board;
+use crate::board::board::Board;
 
 #[derive(Default)]
 pub struct Game {
@@ -9,12 +9,15 @@ pub struct Game {
 
 impl Game {
     pub fn run(&mut self, mut rl: RaylibHandle, thread: RaylibThread) {
+        let b = Board::default();
+
+        
         while !rl.window_should_close() {
             let mut d = rl.begin_drawing(&thread);
-             
+            
             d.clear_background(Color::WHITE);
             d.draw_text(&self.player_1_score.to_string(), 12, 12, 20, Color::BLACK);
-            
+            b.draw(d, &thread);
             // d.gui_check_box(
             //     rect1,
             //     Some(c_str),

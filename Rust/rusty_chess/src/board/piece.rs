@@ -1,12 +1,12 @@
 use raylib::core::texture::Image;
 
 enum PieceName {
-    pawn,
-    bishop,
-    knight,
-    rook,
-    king, 
-    queen, 
+    Pawn,
+    Bishop,
+    Knight,
+    Rook,
+    King, 
+    Queen, 
 }
 
 pub struct Piece {
@@ -17,7 +17,7 @@ pub struct Piece {
 }
 
 impl Piece {
-    pub fn new(owner: bool, name: PieceName, position: (u8, u8), img: Image) -> Piece {
+    fn new(owner: bool, name: PieceName, position: (u8, u8), img: Image) -> Piece {
         Self {
             owner: owner,
             name: name,
