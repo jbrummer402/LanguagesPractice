@@ -6,7 +6,7 @@ enum PieceName {
     Knight,
     Rook,
     King, 
-    Queen, 
+    Queen,
 }
 
 pub struct Piece {
