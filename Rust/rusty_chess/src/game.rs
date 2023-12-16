@@ -1,45 +1,49 @@
 use raylib::prelude::*;
-use crate::board::board::Board;
+use crate::board::Board;
+use crate::board::Drawable;
 
 #[derive(Default)]
 pub struct Game {
     player_1_score: u8,
-    player_2_score: u8,
 }
 
 impl Game {
     pub fn run(&mut self, mut rl: RaylibHandle, thread: RaylibThread) {
-        let b = Board::default();
-
+        
+        let mut brd: Board = Board::new();
         
         while !rl.window_should_close() {
-            let mut d = rl.begin_drawing(&thread);
+            let mut d: RaylibDrawHandle<'_> = rl.begin_drawing(&thread);
             
             d.clear_background(Color::WHITE);
             d.draw_text(&self.player_1_score.to_string(), 12, 12, 20, Color::BLACK);
-            b.draw(d, &thread);
-            // d.gui_check_box(
-            //     rect1,
-            //     Some(c_str),
-            //     false,
+            
+            brd.draw(&mut d);
+
+            let dest: Rectangle = Rectangle::new(0.0, 0.0, 200.0, 200.0);
+            
+            // d.draw_texture_pro(
+            //     &img_texture,
+            //     Rectangle {
+            //         x:0.0,
+            //         y:0.0,
+            //         width: img_texture.width() as f32,
+            //         height: img_texture.height() as f32,
+            //     },
+            //     dest,
+            //     Vector2 { x: 0.0, y: 0.0},
+            //     0.0,
+            //     Color::WHITE,
             // );
-    
-            // d.gui_spinner(
-            //     rect1,
-            //     Some(c_str),
-            //     &mut 50,
-            //     0,
-            //     100,
-            //     true,
-            // );
-        }
+            // d.draw_texture(&img_texture, 300, 300, color::Color::WHITE);
+            drop(d);
+        };
         
     }
 
     pub fn default() -> Self {
         Self {
             player_1_score: 0,
-            player_2_score: 0, 
         }
     }
 }

@@ -1,5 +1,3 @@
-use raylib::prelude::*;
-
 mod game;
 mod board;
 use game::Game;
@@ -8,7 +6,7 @@ const WIDTH: i32 = 960;
 const HEIGHT: i32 = 540;
 
 fn main() {
-    let (mut rl, thread) = raylib::init()
+    let (rl, thread) = raylib::init()
     .size(WIDTH,HEIGHT)
     .title("Rusty Chess")
     .build();
