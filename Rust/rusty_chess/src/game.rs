@@ -1,6 +1,5 @@
 use raylib::prelude::*;
 use crate::board::Board;
-use crate::board::Drawable;
 
 #[derive(Default)]
 pub struct Game {
@@ -9,17 +8,17 @@ pub struct Game {
 
 impl Game {
     pub fn run(&mut self, mut rl: RaylibHandle, thread: RaylibThread) {
-        
         let mut brd: Board = Board::new();
-        
+        let pieces = brd.load_pieces(&mut rl, &thread);
+
         while !rl.window_should_close() {
             let mut d: RaylibDrawHandle<'_> = rl.begin_drawing(&thread);
             
             d.clear_background(Color::WHITE);
             d.draw_text(&self.player_1_score.to_string(), 12, 12, 20, Color::BLACK);
-            
             brd.draw(&mut d);
 
+            
             let dest: Rectangle = Rectangle::new(0.0, 0.0, 200.0, 200.0);
             
             // d.draw_texture_pro(
