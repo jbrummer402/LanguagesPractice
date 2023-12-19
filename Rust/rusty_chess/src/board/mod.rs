@@ -77,21 +77,21 @@ impl Board {
             
             match file {
                 Ok(path) => {
-                    let texture = rl.load_texture(thread, path.clone().into_os_string().to_str().unwrap());
+                    let texture = rl.load_texture(thread, path.clone().into_os_string().to_str().expect("failed"));
                     if path.to_string_lossy().contains("white") {
                         let path_substring: &str = &path.to_string_lossy()[5..];
                         
-                        let p = Piece::new(true, str_to_piecename(path_substring).unwrap(), texture.unwrap());
+                        let p = Piece::new(true, piece::PieceName::Bishop, texture.expect("failed"));
                         
                         white_pieces.push(p);
                     } else {
                         let path_substring: &str = &path.to_string_lossy()[5..];
 
-                        let texture = rl.load_texture(thread, path.clone().into_os_string().to_str().unwrap());
+                        let texture = rl.load_texture(thread, path.clone().into_os_string().to_str().expect("failed"));
                         
                         let p = Piece::new(
                                                 false, 
-                                                str_to_piecename(path_substring).unwrap(), 
+                                                piece::PieceName::Bishop, 
                                         texture.unwrap());
 
                         black_pieces.push(p);
