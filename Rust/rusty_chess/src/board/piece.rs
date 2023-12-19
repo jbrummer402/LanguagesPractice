@@ -1,4 +1,6 @@
+use raylib::prelude::*;
 use raylib::core::texture::Image;
+use crate::board::Space;
 
 pub enum PieceName {
     Pawn,
@@ -12,8 +14,7 @@ pub enum PieceName {
 pub struct Piece {
     owner: bool,
     name: PieceName,
-    position: (u8, u8),
-    img: Image,
+    piece_texture: Texture2D,
 }
 
 impl Piece {
@@ -21,12 +22,16 @@ impl Piece {
         Image::load_image(&file_path).unwrap()
     }
 
-    pub fn new(self, owner: bool, name: PieceName, position: (u8, u8), file_path: String) -> Piece {
-        Piece {
+    pub fn draw_self(rl: &mut RaylibHandle, thread: RaylibThread) {
+
+    }
+
+    pub fn new(owner: bool, name: PieceName, piece_texture: Texture2D) -> Piece {
+        let pc = Piece {
             owner: owner,
             name: name,
-            position: position,
-            img: self.get_image(String::from(file_path)),
-        }
+            piece_texture: piece_texture,
+        };
+        pc
     }
 }
