@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 glob = "0.3.1"
 raylib = "3.7.0"
+substring = "1.4.5"

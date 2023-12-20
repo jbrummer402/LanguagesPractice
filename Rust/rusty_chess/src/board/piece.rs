@@ -2,6 +2,7 @@ use raylib::prelude::*;
 use raylib::core::texture::Image;
 use crate::board::Space;
 
+#[derive(Clone, Copy)]
 pub enum PieceName {
     Pawn,
     Bishop,
@@ -18,12 +19,8 @@ pub struct Piece {
 }
 
 impl Piece {
-    fn get_image(self, file_path: String) -> Image {
-        Image::load_image(&file_path).unwrap()
-    }
-
-    pub fn draw_self(rl: &mut RaylibHandle, thread: RaylibThread) {
-
+    pub fn draw_self(self, d: &mut RaylibDrawHandle, rl: &mut RaylibHandle, thread: &RaylibThread) {
+        d.draw_texture(&self.piece_texture, 300, 300, color::Color::WHITE);
     }
 
     pub fn new(owner: bool, name: PieceName, piece_texture: Texture2D) -> Piece {

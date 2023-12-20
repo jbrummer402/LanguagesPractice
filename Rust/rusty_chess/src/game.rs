@@ -9,7 +9,7 @@ pub struct Game {
 impl Game {
     pub fn run(&mut self, mut rl: RaylibHandle, thread: RaylibThread) {
         let mut brd: Board = Board::new();
-        let pieces = brd.load_pieces(&mut rl, &thread);
+        brd.load_pieces(&mut rl, &thread);
 
         while !rl.window_should_close() {
             let mut d: RaylibDrawHandle<'_> = rl.begin_drawing(&thread);
