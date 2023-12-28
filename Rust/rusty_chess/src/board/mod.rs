@@ -1,111 +1,70 @@
 pub mod piece;
 use raylib::prelude::*;
-use std::path::{PathBuf};
-use glob::glob;
 
-use substring::Substring;
-
-use self::piece::Piece;
-
-fn str_to_piecename(input: &str) -> Result<piece::PieceName, ()> {
-    match input {
-        "pawn" => Ok(piece::PieceName::Pawn),
-        "knight" => Ok(piece::PieceName::Knight),
-        "rook" => Ok(piece::PieceName::Rook),
-        "bishop" => Ok(piece::PieceName::Bishop),
-        "king" => Ok(piece::PieceName::King),
-        "queen" => Ok(piece::PieceName::Queen),
-        _ => Err(()),
-    }
-}
 
 #[derive(Default)]
-pub struct Space {
-    position: (i32, i32),
+pub struct Space<'a> {
+    pub position: (i32, i32),
     size: i32,
     taken: bool,
+    piece: Option<piece::Piece<'a>>,
     c: color::Color,
 }
 
-impl Space {
-    fn draw(&mut self, d: &mut RaylibDrawHandle) {
-        d.draw_rectangle(
-            self.size * self.position.0, 
-            self.size * self.position.1,
-            self.size.into(), 
-            self.size.into(), 
-            self.c);
-    }
-
-    fn new(position: (i32, i32), taken: bool, c: color::Color) -> Space {
+impl<'a> Space<'_> {
+    fn new(position: (i32, i32), taken: bool, piece: Option<piece::Piece>, c: color::Color) -> Space {
         Space {
             position: position,
             taken: taken,
-            size: 45,
+            size: 60,
+            piece: piece,
             c: c,
         }
     }
 }
 
 #[derive(Default)]
-pub struct Board {
-    grid_size: u8,
-    spaces: Vec<Space>,
-    black_pieces: Vec<piece::Piece>,
-    white_pieces: Vec<piece::Piece>,
+pub struct Board<'a> {
+    pub grid_size: u8,
+    pub spaces: Vec<Vec<Space<'a>>>,
+    player1_pieces: Vec<piece::Piece<'a>>,
+    player2_pieces: Vec<piece::Piece<'a>>,
 }
 
-impl Board {
-    pub fn load_pieces(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread) {
-        let mut white_pieces: Vec<Piece> = Vec::new();
-        let mut black_pieces: Vec<Piece> = Vec::new();
-
-        for file in glob("./imgs/pieces-basic-png/*").expect("Directory not found") {
-            
-            match file {
-                Ok(path) => {
-                    let texture = rl.load_texture(thread, path.clone().into_os_string().to_str().expect("failed"));
-                    
-                    let path_substring: &str = &(path.clone().into_os_string().into_string().unwrap());
-                    
-                    let p = Piece::new(true, str_to_piecename(path_substring.substring(28, path_substring.len() - 4)).unwrap(), texture.expect("failed"));
-                    
-                    // if path.to_string_lossy().contains("white") {    
-                    //     white_pieces.push(&p);
-                    // } else {
-                    //     black_pieces.push(&p);
-                    // }
-                    
-                }
-                
-                _ => panic!("ruhroh")
-            }
-        }
-    }
-
+impl<'a> Board<'_>  {
     pub fn draw(&mut self, d: &mut RaylibDrawHandle) {
         for row in 0..self.grid_size {
+
+            let mut space_row = Vec::<Space>::new();
+            
             for col in 0..self.grid_size {
 
-                let mut cur_space = 
-                        Space::new((row.into(), col.into()), 
+                let cur_space = 
+                        Space::new((row as i32, col as i32), 
                         false, 
+                        None, 
                             if (col + row) % 2 == 0 { color::Color::LIGHTGRAY} else { color::Color::GRAY });
                 
-                cur_space.draw(d);
-                self.spaces.push(cur_space);
+                d.draw_rectangle(
+                    cur_space.size * cur_space.position.0, 
+                    cur_space.size * cur_space.position.1,
+                    cur_space.size.into(), 
+                    cur_space.size.into(), 
+                    cur_space.c);
+                space_row.push(cur_space);
             }
+            self.spaces.push(space_row);
         }
 
 
     }
     
-    pub fn new() -> Self {
+    pub fn new() -> Board<'a> {
         Board {
             grid_size: 8,
-            spaces: Vec::<Space>::new(),
-            black_pieces: Vec::<piece::Piece>::new(),
-            white_pieces: Vec::<piece::Piece>::new(),
+            spaces: Vec::<Vec::<Space>>::new(),
+            player1_pieces: Vec::<piece::Piece<'a>>::new(),
+            player2_pieces: Vec::<piece::Piece<'a>>::new(),
         }
     }
 }
