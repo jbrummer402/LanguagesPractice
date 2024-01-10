@@ -1,14 +1,14 @@
 use raylib::prelude::*;
 use raylib::consts::MouseButton::*;
 
-
+#[derive(Debug, Eq, Hash, Copy, Clone, PartialEq)]
 pub enum PieceName {
-    Pawn(Texture2D),
-    Rook(Texture2D),
-    Knight(Texture2D),
-    Bishop(Texture2D),
-    Queen(Texture2D),
-    King(Texture2D)
+    Pawn,
+    Rook,
+    Knight,
+    Bishop,
+    Queen,
+    King,
 }
 
 
@@ -23,8 +23,7 @@ impl Behvaior for PieceName {
 }
 
 
-pub struct Piece<'a> {
-    _phantom_data: std::marker::PhantomData<&'a ()>,
+pub struct Piece {
     pub owner: bool,
     pub name: PieceName,
     pub piece_texture: Texture2D,
@@ -42,7 +41,7 @@ impl Movement for PieceName {
     }
 }
 
-impl<'a> Piece<'_> {
+impl Piece {
     pub fn draw_self(&self, d: &mut RaylibDrawHandle) {
         d.draw_texture(&self.piece_texture, self.position.0.into(), self.position.1.into(), color::Color::WHITE);
     }
@@ -62,13 +61,13 @@ impl<'a> Piece<'_> {
         }
     }
 
-    pub fn new(owner: bool, name: PieceName, piece_texture: Texture2D, position: (u8, u8), _phantom_marker: std::marker::PhantomData<&'a ()>) -> Piece<'a> {
+    pub fn new(owner: bool, name: PieceName, piece_texture: Texture2D, position: (u8, u8), ) -> Piece {
         Piece {
             owner: owner,
             name: name,
             piece_texture: piece_texture,
             position: position, 
-            _phantom_data: _phantom_marker,
+           
         }
     }
 }

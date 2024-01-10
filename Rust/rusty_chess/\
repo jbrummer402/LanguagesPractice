@@ -1,5 +1,5 @@
 use raylib::prelude::*;
-use crate::board::{Board};
+use crate::board::{Board, piece};
 use crate::board::piece::{Piece, PieceName};
 use std::collections::HashMap;
 
@@ -7,26 +7,32 @@ use std::{panic, u8};
 use std::fmt::Error;
 use glob::glob;
 
-fn string_to_piece_name(s: &str) -> Result::<PieceName, Error> {
+fn string_to_piece_name(s: &str, te: Texture2D) -> Result::<PieceName, Error> {
     match s {
-        "pawn" => Ok(PieceName::Pawn),
-        "rook" => Ok(PieceName::Rook),
-        "bishop" => Ok(PieceName::Bishop),
-        "knight" => Ok(PieceName::Knight),
-        "king" => Ok(PieceName::King),
-        "queen" => Ok(PieceName::Queen),
+        "pawn" => Ok(PieceName::Pawn(te)),
+        "rook" => Ok(PieceName::Rook(te)),
+        "bishop" => Ok(PieceName::Bishop(te)),
+        "knight" => Ok(PieceName::Knight(te)),
+        "king" => Ok(PieceName::King(te)),
+        "queen" => Ok(PieceName::Queen(te)),
         _ => panic!("bitch"),
     }
 }
 
-pub struct Game {
+pub struct Game<'a> {
+    pub board: Board,
     pub turn: bool,
     pub layout: [[u8; 8]; 8],
+    piece_textures: HashMap<u8, Vec<PieceName>>,
     // Map the names of pieces to the number of them left
-    piece_textures: HashMap<PieceName, Vec<Texture2D>>,
+    // per player
+    // pub player1_pieces: HashMap<PieceName, u8>,
+    // pub player2_pieces: HashMap<PieceName, u8>,
+    // white_textures: HashMap<&'a Piece<'a>, Texture2D>,
+    // black_textures: HashMap<&'a Piece<'a>, Texture2D>,
 }
 
-impl Game {
+impl<'a> Game<'_> {
     pub fn draw_board(&mut self, d: &mut RaylibDrawHandle) {
         for row in 0..8 {
             for col in 0..8 {
@@ -41,7 +47,12 @@ impl Game {
 
     }
     // 
-    pub fn draw_pieces(&self, d: &mut RaylibDrawHandle) {
+    pub fn draw_pieces(&self, d: &mut RaylibDrawHandle, 
+                    //    p_text: &Texture2D, 
+                    //    position: (u16, u16), 
+                    //    space_between: u16, 
+                    //    num_pieces: u8
+                ) {
         
         // Iterate through every piece currently on the board
         for row in 0..self.layout.len() {
@@ -62,47 +73,59 @@ impl Game {
                 // The piece to the respective texture
                 // The location to the respective space
                 let text_rect = Rectangle::new(
-                    (col * 60) as f32,
-                    (row * 60) as f32,
+                    row as f32,
+                    location as f32,
                     60.0,60.0
                 );
-                
-                let p_text: &_ = match piece {
-                    1 => {
-                        &self.piece_textures.get(&PieceName::Pawn).unwrap()[owner as usize - 1]
-                    },
-                    2 => {
-                        &self.piece_textures.get(&PieceName::Rook).unwrap()[owner as usize - 1]
-                    },
-                    3 => {
-                        &self.piece_textures.get(&PieceName::Knight).unwrap()[owner as usize - 1]
-                    },
-                    4 => {
-                        &self.piece_textures.get(&PieceName::Bishop).unwrap()[owner as usize - 1]
-                    },
-                    5 => {
-                        &self.piece_textures.get(&PieceName::Queen).unwrap()[owner as usize - 1]
-                    },
-                    6 => {
-                        &self.piece_textures.get(&PieceName::King).unwrap()[owner as usize - 1]
-                    },
-                    _ => continue,
-                };
-                
                 d.draw_texture_pro(
-                    p_text, 
+                    texture, 
                     Rectangle {
                      x:0.0,
                      y:0.0,
-                     width: p_text.width() as f32,
-                     height: p_text.height() as f32, },
+                     width: texture.width() as f32,
+                     height: texture.height() as f32, },
                     text_rect,
                     Vector2 {x: 0.0, y: 0.0},
                     0.0,
                     Color::WHITE,
-                );               
+                );
+
+                // match name.unwrap() {
+                //     PieceName::Pawn => {
+                        
+                        
+                        
+                //     },
+                //     PieceName::Rook => {},
+                //     PieceName::Knight => {},
+                //     PieceName::Bishop => {},
+                //     PieceName::Queen => {},
+                //     PieceName::King => {},
+                // }
             }
-        } 
+        }
+
+        // let mut piece_rects = Vec::<Rectangle>::new();
+
+        // for i in 0..num_pieces {
+        //     let left: Rectangle = Rectangle::new(position.0 as f32,  position.1 as f32, 60.0, 60.0);
+
+        //     piece_rects.push(left); 
+            
+        //     d.draw_texture_pro(
+        //         p_text,
+        //         Rectangle {
+        //             x:0.0,
+        //             y:0.0,
+        //             width: p_text.width() as f32,
+        //             height: p_text.height() as f32, },
+        //         left,
+        //         Vector2 { x: 0.0, y: 0.0 },
+        //         0.0,
+        //         Color::WHITE,
+        //     );
+        // }
+        
     }
     
     fn piece_index(str: &String) -> (Result<usize, Error>, u8) {
@@ -116,34 +139,32 @@ impl Game {
         for file in 
             glob("./imgs/pieces-basic-png/*")
             .expect("Directory not found") {
-                    let f = file.unwrap();    
+            
+            match file {
+                Ok(path) => {
                     let texture = rl.load_texture(&thread, 
-                                                    f 
-                                                    .clone()
-                                                    .into_os_string()
-                                                    .to_str()
-                                                    .expect("failed"));
-                    let t = texture.unwrap();
-
-                    let path_substring = &(f.clone().into_os_string().into_string().unwrap());
+                                                       path
+                                                                .clone()
+                                                                .into_os_string()
+                                                                .to_str()
+                                                                .expect("failed"));
+                    
+                    let path_substring = &(path.clone().into_os_string().into_string().unwrap());
 
                     let (index, owner) = Self::piece_index(&String::from(path_substring));
-             
-                    let name = string_to_piece_name(&path_substring[index? + 7..path_substring.len() - 4]);
-                    let p_name = &name.unwrap();
+                    
+                    let name = string_to_piece_name(&path_substring[index? + 7..path_substring.len() - 4], texture.unwrap());
+                    println!("{:?}", name);
 
-                    match self.piece_textures.entry(*p_name) {
-                        std::collections::hash_map::Entry::Occupied(mut entry) => {
-                            entry.get_mut().push(t);
-                        },
-                        std::collections::hash_map::Entry::Vacant(mut entry) => {
-                        let mut texture_vec = Vec::<Texture2D>::new();
-                        texture_vec.push(t);
-                        self.piece_textures.insert(*p_name, texture_vec);
-                        },
-
+                    if !self.piece_textures.contains_key(&owner) {
+                        let mut texture_vec = Vec::<PieceName>::new();
+                        texture_vec.push(name.unwrap());
+                        self.piece_textures.insert(owner, texture_vec);
                     }
+                },
 
+                _ => panic!("bitch")
+            }
         }
         Ok(())
     }
@@ -163,15 +184,14 @@ impl Game {
             
             // Draw the board and it's alternating color spaces
             // pass over mutable reference to draw handle
-            
-            self.draw_board(&mut d);
             self.draw_pieces(d);
-
+            self.draw_board(&mut d);
         };
         Ok(())
         
     }
-    pub fn default() -> Game {
+
+    pub fn default() -> Game<'a> {
         
         let mut layout: [[u8; 8]; 8] = [[0; 8]; 8];
         let mut piece_order = vec![2, 3, 4, 5, 6, 4, 3, 2];
@@ -212,9 +232,10 @@ impl Game {
             }
         }
         Game {
+            board: Board::new(),
             turn: true,
             layout: layout,
-            piece_textures: HashMap::<PieceName, Vec<Texture2D>>::new(),
+            piece_textures: HashMap::<u8, Vec<PieceName>>::new(),
     // Map the names of pieces to the number of them left
     // per player
         }

@@ -1,9 +1,5 @@
-use std::collections::HashMap;
 use std::fmt::Error;
-
 use rusty_chess::game;
-use rusty_chess::board::piece;
-use rusty_chess::board::Board;
 
 const WIDTH: i32 = 960;
 const HEIGHT: i32 = 540;
