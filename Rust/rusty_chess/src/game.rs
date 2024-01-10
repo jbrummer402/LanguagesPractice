@@ -48,19 +48,38 @@ impl<'a> Game<'_> {
     }
     // 
     pub fn draw_pieces(&self, d: &mut RaylibDrawHandle, 
-                       p_text: &Texture2D, 
-                       position: (u16, u16), 
-                       space_between: u16, 
-                       num_pieces: u8) {
+                    //    p_text: &Texture2D, 
+                    //    position: (u16, u16), 
+                    //    space_between: u16, 
+                    //    num_pieces: u8
+                ) {
         
         // Iterate through every piece currently on the board
         for row in 0..self.layout.len() {
-            for col in self.layout[row] {
-                match col {
-                    8 => println!(),
-                    _ => println!("Not 8"),
+            for col in 0..self.layout[row].len() {
+                // match col {
+                //     8 => println!(),
+                //     _ => println!("Not 8"),
                     
+                // }
+                
+                let space = self.layout[row][col];
+                if space != 0 {
+                    println!("{:#o}", space);
+
+                    let owner = space / 64;
+                    let location = (space / 8) % 8;
+                    let piece  = space % 8; 
+
+                
+                    println!("The piece is {:#o}", piece);
+                    println!("The location is {:#o}", location);
+                    println!("The owner is {:#o}", owner);
+                
+
                 }
+               
+               
 
                 // match name.unwrap() {
                 //     PieceName::Pawn => {
@@ -77,29 +96,26 @@ impl<'a> Game<'_> {
             }
         }
 
-        let mut piece_rects = Vec::<Rectangle>::new();
+        // let mut piece_rects = Vec::<Rectangle>::new();
 
-        for i in 0..num_pieces {
-            let left: Rectangle = Rectangle::new(position.0 as f32,  position.1 as f32, 60.0, 60.0);
+        // for i in 0..num_pieces {
+        //     let left: Rectangle = Rectangle::new(position.0 as f32,  position.1 as f32, 60.0, 60.0);
 
-            piece_rects.push(left);
-            let right: Rectangle = Rectangle::new((position.0 + 60 * space_between) as f32,  position.1 as f32, 60.0, 60.0);
+        //     piece_rects.push(left); 
             
-            
-            d.draw_texture_pro(
-                p_text,
-                Rectangle {
-                    x:0.0,
-                    y:0.0,
-                    width: p_text.width() as f32,
-                    height: p_text.height() as f32,
-                },
-                left,
-                Vector2 { x: 0.0, y: 0.0 },
-                0.0,
-                Color::WHITE,
-            );
-        }
+        //     d.draw_texture_pro(
+        //         p_text,
+        //         Rectangle {
+        //             x:0.0,
+        //             y:0.0,
+        //             width: p_text.width() as f32,
+        //             height: p_text.height() as f32, },
+        //         left,
+        //         Vector2 { x: 0.0, y: 0.0 },
+        //         0.0,
+        //         Color::WHITE,
+        //     );
+        // }
         
     }
     
@@ -129,13 +145,12 @@ impl<'a> Game<'_> {
                     let (index, owner) = Self::piece_index(&String::from(path_substring));
                     
                     let name = string_to_piece_name(&path_substring[index? + 7..path_substring.len() - 4], texture.unwrap());
+                    println!("{:?}", name);
 
                     if !self.piece_textures.contains_key(&owner) {
                         let mut texture_vec = Vec::<PieceName>::new();
                         texture_vec.push(name.unwrap());
                         self.piece_textures.insert(owner, texture_vec);
-                    } else {
-                        self.piece_textures.insert(owner, v)
                     }
                 },
 
@@ -160,12 +175,8 @@ impl<'a> Game<'_> {
             
             // Draw the board and it's alternating color spaces
             // pass over mutable reference to draw handle
-
+            self.draw_pieces(d);
             self.draw_board(&mut d);
-
-            for s in 0..self.layout.len() {
-                
-            }
         };
         Ok(())
         
@@ -184,10 +195,13 @@ impl<'a> Game<'_> {
             let row = init_rows.pop();
 
             for col in 0..layout[row.unwrap() as usize].len() {
+                // Position of the piece
                 layout[row.unwrap() as usize][col] += col as u8;
                 
                 let owner: u8 = match row {
+                    // If the rows are the top two, the owner is player 1
                     Some(0) | Some(1) => { 1 },
+                    // elif the rows are the bottom two, the owner is player 2
                     Some(6) | Some(7) => { 2 },
                     _ => { 0 }
                 };
@@ -208,7 +222,6 @@ impl<'a> Game<'_> {
                 
             }
         }
-        
         Game {
             board: Board::<'a>::new(),
             turn: true,
@@ -219,3 +232,4 @@ impl<'a> Game<'_> {
         }
     }
 }
+    
