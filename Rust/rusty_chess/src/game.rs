@@ -1,21 +1,20 @@
 use raylib::prelude::*;
-use crate::board::{Board};
 use crate::board::piece::{Piece, PieceName};
 use std::collections::HashMap;
-
+use raylib::consts::MouseButton::*;
 use std::{panic, u8};
 use std::fmt::Error;
 use glob::glob;
 
 fn string_to_piece_name(s: &str) -> Result::<PieceName, Error> {
     match s {
-        "pawn" => Ok(PieceName::Pawn),
-        "rook" => Ok(PieceName::Rook),
-        "bishop" => Ok(PieceName::Bishop),
-        "knight" => Ok(PieceName::Knight),
-        "king" => Ok(PieceName::King),
-        "queen" => Ok(PieceName::Queen),
-        _ => panic!("bitch"),
+        "pawn" | "Pawn" => Ok(PieceName::Pawn),
+        "rook" | "Rook" => Ok(PieceName::Rook),
+        "bishop" | "Bishop" => Ok(PieceName::Bishop),
+        "knight" | "Knight" => Ok(PieceName::Knight),
+        "king" | "King" => Ok(PieceName::King),
+        "queen" | "Queen" => Ok(PieceName::Queen),
+        _ => panic!("Piece not found! Zoinks!"),
     }
 }
 
@@ -41,32 +40,23 @@ impl Game {
 
     }
     // 
-    pub fn draw_pieces(&self, d: &mut RaylibDrawHandle) {
+    pub fn draw_pieces(&self, d: &mut RaylibDrawHandle, piece_rects: &Vec<Rectangle>) {
         
         // Iterate through every piece currently on the board
         for row in 0..self.layout.len() {
             for col in 0..self.layout[row].len() {
-                // match col {
-                //     8 => println!(),
-                //     _ => println!("Not 8"),
-                    
-                // }
                 
                 let space = self.layout[row][col];
 
                 let owner = space / 64;
                 let piece = (space / 8) % 8;
                 let location  = space % 8;                    
+              
+                
                 
                 // Map the owner to the respective color 
                 // The piece to the respective texture
-                // The location to the respective space
-                let text_rect = Rectangle::new(
-                    (col * 60) as f32,
-                    (row * 60) as f32,
-                    60.0,60.0
-                );
-                
+                // The location to the respective space              
                 let p_text: &_ = match piece {
                     1 => {
                         &self.piece_textures.get(&PieceName::Pawn).unwrap()[owner as usize - 1]
@@ -88,28 +78,34 @@ impl Game {
                     },
                     _ => continue,
                 };
-                
-                d.draw_texture_pro(
-                    p_text, 
-                    Rectangle {
-                     x:0.0,
-                     y:0.0,
-                     width: p_text.width() as f32,
-                     height: p_text.height() as f32, },
-                    text_rect,
-                    Vector2 {x: 0.0, y: 0.0},
-                    0.0,
-                    Color::WHITE,
-                );               
+                       
+                for rv in piece_rects {
+                    
+                        d.draw_texture_pro(
+                            p_text, 
+                            Rectangle {
+                                x:0.0,
+                                y:0.0,
+                                width: p_text.width() as f32,
+                                height: p_text.height() as f32, },
+                            rv,
+                            Vector2 {x: 0.0, y: 0.0},
+                            0.0,
+                            Color::WHITE,
+                        ); 
+                    
+                }
+
+               
             }
         } 
     }
     
     fn piece_index(str: &String) -> (Result<usize, Error>, u8) {
         if str.contains("white") { 
-            (Ok(str.find("/white").unwrap()), 1)
+            (Ok(str.find("white").unwrap()), 1)
         } 
-        else { (Ok(str.find("/black").unwrap()), 2) }
+        else { (Ok(str.find("black").unwrap()), 2) }
     } 
 
     pub fn load_pieces_textures(&mut self, rl: &mut RaylibHandle, thread: RaylibThread) -> Result::<(), Error> {
@@ -127,19 +123,21 @@ impl Game {
 
                     let path_substring = &(f.clone().into_os_string().into_string().unwrap());
 
-                    let (index, owner) = Self::piece_index(&String::from(path_substring));
-             
-                    let name = string_to_piece_name(&path_substring[index? + 7..path_substring.len() - 4]);
+                    let (index, owner) = Self::piece_index(&String::from(path_substring));             
+                    
+                    let name = string_to_piece_name(&path_substring[index? + 6..path_substring.len() - 4]);
+
                     let p_name = &name.unwrap();
 
                     match self.piece_textures.entry(*p_name) {
                         std::collections::hash_map::Entry::Occupied(mut entry) => {
                             entry.get_mut().push(t);
                         },
+
                         std::collections::hash_map::Entry::Vacant(mut entry) => {
-                        let mut texture_vec = Vec::<Texture2D>::new();
-                        texture_vec.push(t);
-                        self.piece_textures.insert(*p_name, texture_vec);
+                            let mut texture_vec = Vec::<Texture2D>::new();
+                            texture_vec.push(t);
+                            self.piece_textures.insert(*p_name, texture_vec);
                         },
 
                     }
@@ -151,7 +149,9 @@ impl Game {
     pub fn run(&mut self, rl: &mut RaylibHandle, thread: RaylibThread) -> Result<(), Error> {
         // Load all the textures for each piece first
         self.load_pieces_textures(rl, thread.clone())?;
-
+        
+        let mut piece_rects = Piece::load_rects(rl, self.layout);
+        
         let mut dragging = false;
         let mut offset = Vector2::default();
         
@@ -165,7 +165,7 @@ impl Game {
             // pass over mutable reference to draw handle
             
             self.draw_board(&mut d);
-            self.draw_pieces(d);
+            self.draw_pieces(d, &piece_rects);
 
         };
         Ok(())
