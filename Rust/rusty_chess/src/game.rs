@@ -72,8 +72,8 @@ impl Game {
 
                 let mut rect = 
                     Rectangle {
-                        x: row as f32 * 60.0,
-                        y: column as f32 * 60.0,
+                        x: col as f32 * 60.0,
+                        y: row as f32 * 60.0,
                         width: 60.0,
                         height: 60.0,
                     };
@@ -206,7 +206,6 @@ impl Game {
                         self.pieces_left[i][j].is_dragging = false;
                     }
                     if self.pieces_left[i][j].is_dragging {
-
                         self.pieces_left[i][j].rect.x = d.get_mouse_x() as f32 - offset.x;
                         self.pieces_left[i][j].rect.y = d.get_mouse_y() as f32 - offset.y;
                     }
