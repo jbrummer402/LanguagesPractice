@@ -1,4 +1,4 @@
-use crate::board::piece::{Piece, PieceName};
+use crate::board::piece::{Piece, PieceType};
 use glob::glob;
 use raylib::consts::MouseButton::*;
 use raylib::prelude::*;
@@ -6,14 +6,14 @@ use std::collections::HashMap;
 use std::fmt::{write, Error};
 use std::{panic, u8};
 
-fn string_to_piece_name(s: &str) -> Result<PieceName, Error> {
+fn string_to_piece_name(s: &str) -> Result<PieceType, Error> {
     match s {
-        "pawn" | "Pawn" => Ok(PieceName::Pawn),
-        "rook" | "Rook" => Ok(PieceName::Rook),
-        "bishop" | "Bishop" => Ok(PieceName::Bishop),
-        "knight" | "Knight" => Ok(PieceName::Knight),
-        "king" | "King" => Ok(PieceName::King),
-        "queen" | "Queen" => Ok(PieceName::Queen),
+        "pawn" | "Pawn" => Ok(PieceType::Pawn),
+        "rook" | "Rook" => Ok(PieceType::Rook),
+        "bishop" | "Bishop" => Ok(PieceType::Bishop),
+        "knight" | "Knight" => Ok(PieceType::Knight),
+        "king" | "King" => Ok(PieceType::King),
+        "queen" | "Queen" => Ok(PieceType::Queen),
         _ => panic!("Piece not found! Zoinks!"),
     }
 }
@@ -22,11 +22,13 @@ pub struct Game {
     pub turn: bool,
     pub layout: [[u8; 8]; 8],
     // Map the names of pieces to the number of them left
-    piece_textures: HashMap<PieceName, Vec<Texture2D>>,
+    piece_textures: HashMap<PieceType, Vec<Texture2D>>,
+    pieces_left: Vec<Vec<Piece>>,
 }
 
+
 impl Game {
-    pub fn draw_board(&mut self, d: &mut RaylibDrawHandle) {
+    fn draw_board(&mut self, d: &mut RaylibDrawHandle) {
         for row in 0..8 {
             for col in 0..8 {
                 d.draw_rectangle(
@@ -40,43 +42,92 @@ impl Game {
                         color::Color::GRAY
                     },
                 );
-            }
-        }
-    }
-    //
-    pub fn draw_pieces(&self, d: &mut RaylibDrawHandle, piece_rects: &Vec<Rectangle>) {
-        // Iterate through every piece currently on the board
-        for row in 0..self.layout.len() {
-            for col in 0..self.layout[row].len() {
-                let space = self.layout[row][col];
+
+                let space = self.layout[row as usize][col as usize];
 
                 let owner = space / 64;
                 let piece = (space / 8) % 8;
-                let location = space % 8;
+                let column = space % 8;
+
+                if owner == 0 {
+                    continue;
+                }
+            }
+        }
+    }
+    fn create_pieces(&mut self) {
+        for row in 0..self.layout.len() { 
+            let mut piece_rows = Vec::<Piece>::new();
+            
+            for col in 0..self.layout[row].len() {
+                
+
+                let owner = self.layout[row as usize][col as usize] / 64;
+                let piece = (self.layout[row as usize][col as usize] / 8) % 8;
+                let column = self.layout[row as usize][col as usize] % 8;
+
+                if owner == 0 {
+                    continue;
+                }
+
+                let mut rect = 
+                    Rectangle {
+                        x: row as f32 * 60.0,
+                        y: column as f32 * 60.0,
+                        width: 60.0,
+                        height: 60.0,
+                    };
+                
+                let p_type = Piece::piece_to_name(piece);
+
+                let mut new_piece = Piece {
+                    rect: rect,
+                    r#type: p_type,
+                    is_dragging: false,
+                };
+
+                piece_rows.push(new_piece);
+            }
+            &self.pieces_left.push(piece_rows);
+        }
+    }
+    fn draw_pieces(&self, d: &mut RaylibDrawHandle) {
+        // Iterate through every piece currently on the board
+
+        for row in 0..self.layout.len() {
+            for col in 0..self.layout[row].len() {
+
+                let space = self.layout[row][col];
 
                 // Map the owner to the respective color
                 // The piece to the respective texture
-                // The location to the respective space
+                // The column to the respective space
+                let owner = space / 64;
+                let piece = (space / 8) % 8;
+                let column = space % 8;
+
+                if owner == 0 {
+                    continue;
+                }
+
                 let p_text: &_ = &self
                     .piece_textures
                     .get(&(Piece::piece_to_name(piece)))
                     .unwrap()[owner as usize - 1];
 
-                for rv in piece_rects {
-                    d.draw_texture_pro(
-                        p_text,
-                        Rectangle {
-                            x: 0.0,
-                            y: 0.0,
-                            width: p_text.width() as f32,
-                            height: p_text.height() as f32,
-                        },
-                        rv,
-                        Vector2 { x: 0.0, y: 0.0 },
-                        0.0,
-                        Color::WHITE,
-                    );
-                }
+                d.draw_texture_pro(
+                    p_text,
+                    Rectangle {
+                        x: 0.0,
+                        y: 0.0,
+                        width: p_text.width() as f32,
+                        height: p_text.height() as f32,
+                    },
+                    self.pieces_left[row as usize][col as usize].rect,
+                    Vector2 { x: 0.0, y: 0.0 },
+                    0.0,
+                    Color::WHITE,
+                );
             }
         }
     }
@@ -89,11 +140,12 @@ impl Game {
         }
     }
 
-    pub fn load_pieces_textures(
+    fn load_pieces_textures(
         &mut self,
         rl: &mut RaylibHandle,
         thread: RaylibThread,
     ) -> Result<(), Error> {
+
         for file in glob("./imgs/pieces-basic-png/*").expect("Directory not found") {
             let f = file.unwrap();
             let texture = rl.load_texture(
@@ -122,6 +174,7 @@ impl Game {
                 }
             }
         }
+        self.create_pieces();
         Ok(())
     }
 
@@ -129,11 +182,8 @@ impl Game {
         // Load all the textures for each piece first
         self.load_pieces_textures(rl, thread.clone())?;
 
-        let mut piece_rects = Piece::load_rects(rl, self.layout);
-
         let mut dragging = false;
         let mut offset = Vector2::default();
-
         while !(rl.window_should_close()) {
             // Begin drawing the textures after loading
             let mut d: &mut RaylibDrawHandle<'_> = &mut rl.begin_drawing(&thread);
@@ -143,8 +193,31 @@ impl Game {
             // Draw the board and it's alternating color spaces
             // pass over mutable reference to draw handle
 
+            for i in 0..self.pieces_left.len() {
+                for j in 0..self.pieces_left[i].len() {
+                    if d.is_mouse_button_pressed(MOUSE_LEFT_BUTTON) {
+                        if self.pieces_left[i][j].rect.check_collision_point_rec(d.get_mouse_position()) {
+                            self.pieces_left[i][j].is_dragging = true;
+                            offset.x = d.get_mouse_x() as f32 - self.pieces_left[i][j].rect.x as f32;
+                            offset.y = d.get_mouse_y() as f32 - self.pieces_left[i][j].rect.y as f32;
+
+                        }
+                    } else if d.is_mouse_button_released(MOUSE_LEFT_BUTTON) {
+                        self.pieces_left[i][j].is_dragging = false;
+                    }
+                    if self.pieces_left[i][j].is_dragging {
+
+                        self.pieces_left[i][j].rect.x = d.get_mouse_x() as f32 - offset.x;
+                        self.pieces_left[i][j].rect.y = d.get_mouse_y() as f32 - offset.y;
+                    }
+
+                }
+
+            }   
             self.draw_board(&mut d);
-            self.draw_pieces(d, &piece_rects);
+            self.draw_pieces(d);                
+            
+            let mut offset = Vector2::default();
         }
         Ok(())
     }
@@ -184,12 +257,15 @@ impl Game {
                         continue;
                     }
                 };
+
             }
         }
         Game {
             turn: true,
             layout: layout,
-            piece_textures: HashMap::<PieceName, Vec<Texture2D>>::new(),
+            piece_textures: HashMap::<PieceType, Vec<Texture2D>>::new(),
+            pieces_left: Vec::<Vec::<Piece>>::new(),
+
             // Map the names of pieces to the number of them left
             // per player
         }
