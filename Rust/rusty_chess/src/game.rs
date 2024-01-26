@@ -20,7 +20,7 @@ fn string_to_piece_name(s: &str) -> Result<PieceType, Error> {
 
 pub struct Game {
     pub turn: bool,
-    pub layout: [[u8; 8]; 8],
+    pub layout: [[u8; 8]; 4],
     // Map the names of pieces to the number of them left
     piece_textures: HashMap<PieceType, Vec<Texture2D>>,
     pieces_left: Vec<Vec<Piece>>,
@@ -42,29 +42,20 @@ impl Game {
                         color::Color::GRAY
                     },
                 );
-
-                let space = self.layout[row as usize][col as usize];
-
-                let owner = space / 64;
-                let piece = (space / 8) % 8;
-                let column = space % 8;
-
-                if owner == 0 {
-                    continue;
-                }
             }
         }
     }
     fn create_pieces(&mut self) {
-        for row in 0..self.layout.len() { 
+        for index in 0..self.layout.len() { 
+
             let mut piece_rows = Vec::<Piece>::new();
             
-            for col in 0..self.layout[row].len() {
+            for col in 0..self.layout[index].len() {
                 
 
-                let owner = self.layout[row as usize][col as usize] / 64;
-                let piece = (self.layout[row as usize][col as usize] / 8) % 8;
-                let column = self.layout[row as usize][col as usize] % 8;
+                let owner = self.layout[index as usize][col as usize] / 64;
+                let piece = (self.layout[index as usize][col as usize] / 8) % 8;
+                let row =  self.layout[index as usize][col as usize] % 8;
 
                 if owner == 0 {
                     continue;
@@ -98,7 +89,6 @@ impl Game {
             for col in 0..self.layout[row].len() {
 
                 let space = self.layout[row][col];
-
                 // Map the owner to the respective color
                 // The piece to the respective texture
                 // The column to the respective space
@@ -195,8 +185,11 @@ impl Game {
 
             for i in 0..self.pieces_left.len() {
                 for j in 0..self.pieces_left[i].len() {
+
                     if d.is_mouse_button_pressed(MOUSE_LEFT_BUTTON) {
+                        
                         if self.pieces_left[i][j].rect.check_collision_point_rec(d.get_mouse_position()) {
+                            
                             self.pieces_left[i][j].is_dragging = true;
                             offset.x = d.get_mouse_x() as f32 - self.pieces_left[i][j].rect.x as f32;
                             offset.y = d.get_mouse_y() as f32 - self.pieces_left[i][j].rect.y as f32;
@@ -221,42 +214,20 @@ impl Game {
         Ok(())
     }
     pub fn default() -> Game {
-        let mut layout: [[u8; 8]; 8] = [[0; 8]; 8];
+        let mut layout: [[u8; 8]; 4] = [[0; 8]; 4];
         let mut piece_order = vec![2, 3, 4, 5, 6, 4, 3, 2];
 
-        let mut init_rows: Vec<u8> = (0..8).collect();
-        // Player 1 pieces (leftmost = 1)
-        // Player 2 Pieces (leftmost = 2)
-        // If left most is 0, there is not piece there
-        while !init_rows.is_empty() {
-            let row = init_rows.pop();
-
-            for col in 0..layout[row.unwrap() as usize].len() {
+        for row in 0..layout.len() {
+            for col in 0..layout[row as usize].len() {
                 // Position of the piece
-                layout[row.unwrap() as usize][col] += col as u8;
+                let owner: u8 = if row <= 1 { 1 } else { 2 }; 
+                layout[row as usize][col] += owner * 64;
+                
+                let piece_type: u8 = if row == 0 || row == 2 { piece_order[col] * 8 } else { 8 };
+                layout[row as usize][col] += piece_type;
 
-                let owner: u8 = match row {
-                    // If the rows are the top two, the owner is player 1
-                    Some(0) | Some(1) => 1,
-                    // elif the rows are the bottom two, the owner is player 2
-                    Some(6) | Some(7) => 2,
-                    _ => 0,
-                };
-
-                layout[row.unwrap() as usize][col] += owner * 64;
-
-                match row {
-                    Some(0) | Some(7) => {
-                        layout[row.unwrap() as usize][col] += piece_order[col] * 8;
-                    }
-                    Some(1) | Some(6) => {
-                        layout[row.unwrap() as usize][col] += 8;
-                    }
-                    _ => {
-                        continue;
-                    }
-                };
-
+                let location: u8 = if row == 3 || row == 2 { 9 - row as u8 } else { row as u8 };
+                layout[row as usize][col] += location;
             }
         }
         Game {
