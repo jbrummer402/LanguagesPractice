@@ -4,6 +4,6 @@ I use this repo to, as the name suggests, practice different languages I'm inter
 
 So far, you can look at what I've made using
 
-##Rust
+## Rust
 
-##Python
+## Python
