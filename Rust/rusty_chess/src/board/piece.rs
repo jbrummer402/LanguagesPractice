@@ -2,6 +2,7 @@ use raylib::consts::MouseButton::*;
 use raylib::prelude::*;
 use std::fs::File;
 use std::io::{self, Read};
+use std::fmt::Error;
 
 #[derive(Debug, Eq, Hash, Copy, Clone, PartialEq)]
 pub enum PieceType {
@@ -13,11 +14,10 @@ pub enum PieceType {
     King,
 }
 
-pub struct Piece {
-    pub piece_rect: Rectangle,
+pub struct Piece<'a> {
+    pub piece_rect: (u8, u8),
     pub piece_type: PieceType,
     pub is_dragging: bool,
-    pub space: Rectangle
 }
 
 // trait Snap {
@@ -55,7 +55,7 @@ pub struct Piece {
 // }
 
 
-impl Piece {
+impl Piece<'_> {
     pub fn piece_to_name(index: u8) -> PieceType {
         match index {
             1 => PieceType::Pawn,
@@ -69,19 +69,18 @@ impl Piece {
     }
 
 
-    pub fn new(piece_rect: Rectangle, piece_type: PieceType, row: f32, col: f32, size: f32) -> Piece {
+    pub fn new(space: (u8,u8), piece_type: PieceType) -> Piece<'static> {
+        // let mut rect = Rectangle{
+        //     x: space.0 as f32 * 60.0,
+        //     y: space.1 as f32 * 60.0,
+        //     width: 60.0,
+        //     height: 60.0
+        // };
 
-        let mut rect = Rectangle {
-                        x: col * size,
-                        y: row * size,
-                        width: size, 
-                        height: size,
-                    };
         Piece {
-            piece_rect: rect,
+            piece_rect: space,
             piece_type: piece_type,
             is_dragging: false,
-            space: rect,
         }
     }
 }

@@ -23,12 +23,11 @@ pub struct Game {
     pub layout: [[u8; 8]; 4],
     // Map the names of pieces to the number of them left
     piece_textures: HashMap<PieceType, Vec<Texture2D>>,
-    pieces_left: Vec<Vec<Piece>>,
 }
 
 
 impl Game {
-    fn draw_board(&mut self, d: &mut RaylibDrawHandle) {
+    fn draw_board(& mut self, d: &mut RaylibDrawHandle) {
         for row in 0..8 {
             for col in 0..8 {
                 d.draw_rectangle
@@ -46,14 +45,13 @@ impl Game {
             }
         }
     }
-    fn create_pieces(&mut self) {
+    fn create_pieces(& mut self) {
         for index in 0..self.layout.len() { 
 
             let mut piece_rows = Vec::<Piece>::new();
             
             for col in 0..self.layout[index].len() {
                 
-
                 let owner = self.layout[index as usize][col as usize] / 64;
                 let piece = (self.layout[index as usize][col as usize] / 8) % 8;
                 let row =  self.layout[index as usize][col as usize] % 8;
@@ -62,28 +60,17 @@ impl Game {
                     continue;
                 }
 
-                let mut rect = Rectangle{
-                        x: col as f32 * 60.0,
-                        y: row as f32 * 60.0,
-                        width: 60.0,
-                        height: 60.0,
-                    };
-                
                 let p_type = Piece::piece_to_name(piece);
 
-                let mut new_piece = Piece {
-                   piece_rect: rect,
-                    piece_type: p_type,
-                    is_dragging: false,
-                    space: rect, 
-                };
+                let mut new_piece = Piece::new( (col as u8, row),
+                                                p_type
+                                                );
 
-                piece_rows.push(new_piece);
+
             }
-            &self.pieces_left.push(piece_rows);
         }
     }
-    fn draw_pieces(&self, d: &mut RaylibDrawHandle) {
+    fn draw_pieces(& mut self, d: &mut RaylibDrawHandle) {
         // Iterate through every piece currently on the board
 
         for row in 0..self.layout.len() {
@@ -101,11 +88,16 @@ impl Game {
                     continue;
                 }
 
-                let p_text: &_ = &self
+                let p_text = &self
                     .piece_textures
                     .get(&(Piece::piece_to_name(piece)))
                     .unwrap()[owner as usize - 1];
 
+                let p_type = Piece::piece_to_name(piece);
+
+                let mut new_piece = Piece::new( (col as u8, row as u8),
+                                                p_type
+                                                );
                 d.draw_texture_pro(
                     p_text,
                    Rectangle {
@@ -114,7 +106,12 @@ impl Game {
                         width: p_text.width() as f32,
                         height: p_text.height() as f32,
                     },
-                    self.pieces_left[row as usize][col as usize].piece_rect,
+                    Rectangle {
+                        x: new_piece.piece_rect.0 as f32 * 60.0,
+                        y: 0.0,
+                        width: p_text.width() as f32,
+                        height: p_text.height() as f32,
+                    },
                     Vector2 { x: 0.0, y: 0.0 },
                     0.0,
                     Color::WHITE,
@@ -132,7 +129,7 @@ impl Game {
     }
 
     fn load_pieces_textures(
-        &mut self,
+        & mut self,
         rl: &mut RaylibHandle,
         thread: RaylibThread,
     ) -> Result<(), Error> {
@@ -165,16 +162,16 @@ impl Game {
                 }
             }
         }
-        self.create_pieces();
+        // self.create_pieces();
         Ok(())
     }
 
-    pub fn run(&mut self, rl: &mut RaylibHandle, thread: RaylibThread) -> Result<(), Error> {
+    pub fn run(& mut self, rl: &mut RaylibHandle, thread: RaylibThread) -> Result<(), Error> {
         // Load all the textures for each piece first
-        self.load_pieces_textures(rl, thread.clone())?;
 
         let mut dragging = false;
         let mut offset = Vector2::default();
+
         while !(rl.window_should_close()) {
             // Begin drawing the textures after loading
             let mut d: &mut RaylibDrawHandle<'_> = &mut rl.begin_drawing(&thread);
@@ -184,32 +181,32 @@ impl Game {
             // Draw the board and it's alternating color spaces
             // pass over mutable reference to draw handle
 
-            for i in 0..self.pieces_left.len() {
-                for j in 0..self.pieces_left[i].len() {
+            for i in 0..self.layout.len() {
+                for j in 0..self.layout[i].len() {
 
-                    if d.is_mouse_button_pressed(MOUSE_LEFT_BUTTON) {
-                        
-                        if self.pieces_left[i][j].piece_rect.check_collision_point_rec(d.get_mouse_position()) {
-                            self.pieces_left[i][j].is_dragging = true;
-                            offset.x = d.get_mouse_x() as f32 - self.pieces_left[i][j].piece_rect.x as f32;
-                            offset.y = d.get_mouse_y() as f32 - self.pieces_left[i][j].piece_rect.y as f32;
-
-                        }
-                    } else if d.is_mouse_button_released(MOUSE_LEFT_BUTTON) {
-                        self.pieces_left[i][j].is_dragging = false;
-                    }
-                    if self.pieces_left[i][j].is_dragging {
-                        self.pieces_left[i][j].piece_rect.x = d.get_mouse_x() as f32 - offset.x;
-                        self.pieces_left[i][j].piece_rect.y = d.get_mouse_y() as f32 - offset.y;
-                    }
+                    // if d.is_mouse_button_pressed(MOUSE_LEFT_BUTTON) {
+                    //     
+                    //     if self.pieces_left[i][j].piece_rect.check_collision_point_rec(d.get_mouse_position()) {
+                    //         self.pieces_left[i][j].is_dragging = true;
+                    //         offset.x = d.get_mouse_x() as f32 - self.pieces_left[i][j].piece_rect.x as f32;
+                    //         offset.y = d.get_mouse_y() as f32 - self.pieces_left[i][j].piece_rect.y as f32;
+                    //
+                    //     }
+                    // } else if d.is_mouse_button_released(MOUSE_LEFT_BUTTON) {
+                    //     self.pieces_left[i][j].is_dragging = false;
+                    // }
+                    // if self.pieces_left[i][j].is_dragging {
+                    //     self.pieces_left[i][j].piece_rect.x = d.get_mouse_x() as f32 - offset.x;
+                    //     self.pieces_left[i][j].piece_rect.y = d.get_mouse_y() as f32 - offset.y;
+                    // }
 
                 }
 
             }   
-            self.draw_board(&mut d);
-            self.draw_pieces(d);                
+            // self.draw_board(&mut d);
+            // self.draw_pieces(d);                
             
-            let mut offset = Vector2::default();
+            // let mut offset = Vector2::default();
         }
         Ok(())
     }
@@ -230,11 +227,11 @@ impl Game {
                 layout[row as usize][col] += location;
             }
         }
+
         Game {
             turn: true,
             layout: layout,
             piece_textures: HashMap::<PieceType, Vec<Texture2D>>::new(),
-            pieces_left: Vec::<Vec::<Piece>>::new(),
 
             // Map the names of pieces to the number of them left
             // per player
